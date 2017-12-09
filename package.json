@@ -1,0 +1,44 @@
+{
+  "name": "transform-arraylike-iterable",
+  "version": "0.1.0",
+  "description": "Iterable that implements optimized map & filter methods for array-like iterables",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm run lint && npm run test-only",
+    "test-only": "tape test.js",
+    "test-ci": "npm run lint && npm run coveralls",
+    "coveralls": "npm run cov && cat ./coverage/lcov.info | coveralls && rm -rf ./coverage",
+    "cov": "nyc --reporter=lcov --require babel-register npm run test-only && nyc report",
+    "lint": "eslint ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xgbuils/transform-arraylike-iterable.git"
+  },
+  "keywords": [
+    "functor",
+    "map",
+    "iterable"
+  ],
+  "author": "Xavier Garcia Buils <xgbuils@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/xgbuils/transform-arraylike-iterable/issues"
+  },
+  "homepage": "https://github.com/xgbuils/transform-arraylike-iterable#readme",
+  "devDependencies": {
+    "babel-register": "^6.24.1",
+    "coveralls": "^2.13.1",
+    "eslint": "^4.3.0",
+    "nyc": "^11.1.0",
+    "pre-commit": "^1.2.2",
+    "tap-spec": "^4.1.1",
+    "tape": "^4.8.0"
+  },
+  "dependencies": {
+    "array-inmutable": "^0.1.2"
+  },
+  "pre-commit": {
+    "run": "test"
+  }
+}
