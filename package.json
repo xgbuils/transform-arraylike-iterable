@@ -1,7 +1,7 @@
 {
   "name": "transform-arraylike-iterable",
   "version": "0.1.0",
-  "description": "Iterable that implements optimized map & filter methods for array-like iterables",
+  "description": "iterable that provides transformation methods for array iterables",
   "main": "index.js",
   "scripts": {
     "test": "npm run lint && npm run test-only",
