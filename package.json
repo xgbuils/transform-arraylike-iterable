@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "npm run lint && npm run test-only",
-    "test-only": "tape test.js",
+    "test-only": "tape test/",
     "test-ci": "npm run lint && npm run coveralls",
     "coveralls": "npm run cov && cat ./coverage/lcov.info | coveralls && rm -rf ./coverage",
     "cov": "nyc --reporter=lcov --require babel-register npm run test-only && nyc report",

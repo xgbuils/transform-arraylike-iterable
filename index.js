@@ -4,22 +4,25 @@ const apply = (a, f) => f(a)
 const matches = a => p => p(a)
 
 const methods = {
+    drop: slice,
+    take: slice,
+    slice,
     map () {
         return (obj, status) => {
             return {
-                value: obj.list.reduce(apply, status.value)
+                value: obj.data.reduce(apply, status.value)
             }
         }
     },
     filter () {
         return (obj, status) => {
-            return obj.list.every(matches(status.value)) ? status : undefined
+            return obj.data.every(matches(status.value)) ? status : undefined
         }
     },
     dropWhile () {
         let indexDropping = 0
         return (obj, status) => {
-            const {array, length} = obj.list
+            const {array, length} = obj.data
             for (let i = indexDropping; i < length; ++i) {
                 const f = array[i]
                 if (f(status.value)) {
@@ -33,10 +36,20 @@ const methods = {
     takeWhile () {
         let isTaking = true
         return (obj, status) => {
-            return isTaking && obj.list.every(matches(status.value))
+            return isTaking && obj.data.every(matches(status.value))
                 ? status
                 : (isTaking = false, {done: true})
         }
+    }
+}
+
+function slice () {
+    let index = 0
+    return (obj, status) => {
+        const start = obj.data.start
+        const inRange = index >= start && index < start + obj.data.length
+        ++index
+        return inRange ? status : undefined
     }
 }
 
@@ -46,42 +59,117 @@ function TransformArrayLikeIterable (iterable) {
     this.lastIndex = -1
 }
 
-function methodGenerator (methodName) {
-    return function (f) {
+function addTransform (data, fn) {
+    return data.push(fn)
+}
+
+function dropTransform (data, n) {
+    if (n <= 0) {
+        return data
+    }
+    return {
+        start: data.start + n,
+        length: data.length - n
+    }
+}
+
+function takeTransform (data, n) {
+    if (n >= data.length) {
+        return data
+    }
+    return {
+        start: data.start,
+        length: n
+    }
+}
+
+function sliceTransform (data, start, end) {
+    if (start <= 0) {
+        return takeTransform(data, end)
+    } else if (end >= data.length) {
+        return dropTransform(data, start)
+    }
+    return {
+        start: data.start + start,
+        length: end - start
+    }
+}
+
+function initCallbackList (fn) {
+    return InmutableArray([fn])
+}
+
+function initDrop (n) {
+    const start = Math.max(n, 0)
+    return {
+        start,
+        length: this.iterable.length - start
+    }
+}
+
+function initTake (n) {
+    const length = Math.max(n, 0)
+    return {
+        start: 0,
+        length: Math.min(length, this.iterable.length)
+    }
+}
+
+function initSlice (start, end) {
+    start = Math.max(start, 0)
+    const length = Math.max(end - start, 0)
+    return {
+        start,
+        length: Math.min(length, this.iterable.length)
+    }
+}
+
+function methodGenerator (methodName, initialize, transform) {
+    return function (...args) {
         const obj = Object.create(this.constructor.prototype)
         const lastIndex = this.lastIndex
-        const last = this.cs[lastIndex] || {}
-        obj.cs = this.cs.map(({type, list}) => ({
+        const cs = this.cs.map(({type, data}) => ({
             type,
-            list
+            data
         }))
+        const last = cs[lastIndex] || {}
         obj.lastIndex = lastIndex
         if (last.type === methodName) {
-            obj.cs[obj.lastIndex].list = last.list.push(f)
+            last.data = transform(last.data, ...args)
         } else {
             ++obj.lastIndex
-            obj.cs.push({
+            cs.push({
                 type: methodName,
-                list: InmutableArray([f])
+                data: initialize.call(this, ...args)
             })
         }
+        obj.cs = cs
         obj.iterable = this.iterable
         return obj
     }
 }
 
 Object.defineProperties(TransformArrayLikeIterable.prototype, {
+    drop: {
+        value: methodGenerator('slice', initDrop, dropTransform)
+    },
+    take: {
+        value: methodGenerator('slice', initTake, takeTransform)
+    },
+    slice: {
+        value: methodGenerator('slice', initSlice, sliceTransform)
+    },
     map: {
-        value: methodGenerator('map')
+        value: methodGenerator('map', initCallbackList, addTransform)
     },
     filter: {
-        value: methodGenerator('filter')
+        value: methodGenerator('filter', initCallbackList, addTransform)
     },
     dropWhile: {
-        value: methodGenerator('dropWhile')
+        value: methodGenerator('dropWhile', initCallbackList, addTransform)
     },
     takeWhile: {
-        value: methodGenerator('takeWhile')
+        value: methodGenerator('takeWhile', initCallbackList, addTransform)
     },
     [Symbol.iterator]: {
         * value () {
