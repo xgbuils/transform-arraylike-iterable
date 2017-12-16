@@ -9,6 +9,7 @@ const dropWhile = require('./dropWhile')
 const filter = require('./filter')
 const map = require('./map')
 const slice = require('./slice')
+const take = require('./take')
 const takeWhile = require('./takeWhile')
 
 const methodMixtures = require('./methodMixtures')
@@ -20,6 +21,7 @@ const testSuites = [
     filter,
     map,
     slice,
+    take,
     takeWhile,
     methodMixtures
 ]

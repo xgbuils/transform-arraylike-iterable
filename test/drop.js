@@ -43,7 +43,19 @@ module.exports = function (test, TransformArrayLikeIterable) {
                 .slice(2)
                 .slice(1)
             st.deepEqual([...iterable], expected,
-                'must behave like slice with positive starts and ends')
+                'must behave like slice without second parameters')
+            st.end()
+        })
+
+        t.test('chaining with negative parameter', function (st) {
+            const iterable = new TransformArrayLikeIterable(array) // (1 2 3 4 5 6)
+                .drop(1) // (2 3 4 5 6)
+                .drop(-2) // (2 3 4 5 6)
+            const expected = array
+                .slice(1)
+                .slice(0)
+            st.deepEqual([...iterable], expected,
+                'negative parameter must be considered as 0 value')
             st.end()
         })
 
