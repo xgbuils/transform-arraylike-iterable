@@ -47,9 +47,14 @@ function slice () {
     let index = 0
     return (obj, status) => {
         const start = obj.data.start
-        const inRange = index >= start && index < start + obj.data.length
+        let result
+        if (index >= start + obj.data.length) {
+            result = {done: true}
+        } else if (index >= start) {
+            result = status
+        }
         ++index
-        return inRange ? status : undefined
+        return result
     }
 }
 
@@ -126,23 +131,23 @@ function initSlice (start, end) {
 
 function methodGenerator (methodName, initialize, transform) {
     return function (...args) {
-        const obj = Object.create(this.constructor.prototype)
-        const lastIndex = this.lastIndex
+        let lastIndex = this.lastIndex
         const cs = this.cs.map(({type, data}) => ({
             type,
             data
         }))
         const last = cs[lastIndex] || {}
-        obj.lastIndex = lastIndex
         if (last.type === methodName) {
             last.data = transform(last.data, ...args)
         } else {
-            ++obj.lastIndex
+            ++lastIndex
             cs.push({
                 type: methodName,
                 data: initialize.call(this, ...args)
             })
         }
+        const obj = Object.create(this.constructor.prototype)
+        obj.lastIndex = lastIndex
         obj.cs = cs
         obj.iterable = this.iterable
         return obj
