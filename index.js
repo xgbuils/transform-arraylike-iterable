@@ -125,7 +125,7 @@ function initSlice (start, end) {
     const length = Math.max(end - start, 0)
     return {
         start,
-        length: Math.min(length, this.iterable.length)
+        length: Math.min(length, this.iterable.length - start)
     }
 }
 
@@ -179,15 +179,24 @@ Object.defineProperties(TransformArrayLikeIterable.prototype, {
     [Symbol.iterator]: {
         * value () {
             const cs = this.cs
-            const callbacks = cs.map(c => methods[c.type]())
             const iterable = this.iterable
-            const length = iterable.length
-            for (let i = 0; i < length; ++i) {
+            let startStep = 0
+            let startValue = 0
+            let end = iterable.length
+            const firstChunk = cs.length && cs[0]
+            const isSliceType = firstChunk && firstChunk.type === 'slice'
+            if (isSliceType) {
+                startStep = 1
+                startValue = firstChunk.data.start
+                end = startValue + firstChunk.data.length
+            }
+            const callbacks = cs.map(c => methods[c.type]())
+            for (let i = startValue; i < end; ++i) {
                 let status = {
                     value: iterable[i],
                     done: false
                 }
-                for (let j = 0; j < callbacks.length; ++j) {
+                for (let j = startStep; j < callbacks.length; ++j) {
                     status = callbacks[j](cs[j], status)
                     if (!status) {
                         break
