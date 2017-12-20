@@ -180,9 +180,9 @@ Object.defineProperties(TransformArrayLikeIterable.prototype, {
         * value () {
             const cs = this.cs
             const iterable = this.iterable
-            let startStep
-            let startValue
-            let end
+            let startStep = 0
+            let startValue = 0
+            let end = iterable.length
             const firstChunk = cs.length && cs[0]
             const isSliceType = firstChunk && firstChunk.type === 'slice'
             if (isSliceType) {
@@ -190,10 +190,6 @@ Object.defineProperties(TransformArrayLikeIterable.prototype, {
                 startStep = 1
                 startValue = data.start
                 end = startValue + data.length
-            } else {
-                startStep = 0
-                startValue = 0
-                end = iterable.length
             }
             const callbacks = cs.map(c => methods[c.type]())
             for (let i = startValue; i < end; ++i) {
