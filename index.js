@@ -186,10 +186,9 @@ Object.defineProperties(TransformArrayLikeIterable.prototype, {
             const firstChunk = cs.length && cs[0]
             const isSliceType = firstChunk && firstChunk.type === 'slice'
             if (isSliceType) {
-                const data = firstChunk.data
                 startStep = 1
-                startValue = data.start
-                end = startValue + data.length
+                startValue = firstChunk.data.start
+                end = startValue + firstChunk.data.length
             }
             const callbacks = cs.map(c => methods[c.type]())
             for (let i = startValue; i < end; ++i) {
