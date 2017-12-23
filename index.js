@@ -61,7 +61,6 @@ function slice () {
 function TransformArrayLikeIterable (iterable) {
     this.iterable = iterable
     this.cs = new InmutableArray([])
-    this.lastIndex = -1
 }
 
 function addTransform (data, fn) {

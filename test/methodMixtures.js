@@ -60,5 +60,31 @@ module.exports = function (test, TransformArrayLikeIterable) {
         })
         t.end()
     })
+
+    test('slice with map & filter', function (t) {
+        t.test('slice, then map, then slice', function (st) {
+            const iterable = new TransformArrayLikeIterable(array) // (1 2 3 4 5)
+                .slice(1, 4) // (2 3 4)
+                .map(e => 2 * e) // (4 6 8)
+                .slice(1, 2) // (6)
+            st.deepEqual([...iterable], [6],
+                'result must be correct')
+            st.deepEqual([...iterable], [6],
+                'result must be correct when it iterates per second time')
+            st.end()
+        })
+        t.test('slice, then filter, then slice', function (st) {
+            const iterable = new TransformArrayLikeIterable(array) // (1 2 3 4 5)
+                .slice(0, 4) // (1 2 3 4)
+                .filter(e => e !== 2) // (1 3 4)
+                .slice(1, 2) // (3)
+            st.deepEqual([...iterable], [3],
+                'result must be correct')
+            st.deepEqual([...iterable], [3],
+                'result must be correct when it iterates per second time')
+            st.end()
+        })
+        t.end()
+    })
 }
 
