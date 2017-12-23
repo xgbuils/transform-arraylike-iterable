@@ -8,21 +8,21 @@ const methods = {
     take: slice,
     slice,
     map () {
-        return (obj, status) => {
+        return function (status) {
             return {
-                value: obj.data.reduce(apply, status.value)
+                value: this.data.reduce(apply, status.value)
             }
         }
     },
     filter () {
-        return (obj, status) => {
-            return obj.data.every(matches(status.value)) ? status : undefined
+        return function (status) {
+            return this.data.every(matches(status.value)) ? status : undefined
         }
     },
     dropWhile () {
         let indexDropping = 0
-        return (obj, status) => {
-            const {array, length} = obj.data
+        return function (status) {
+            const {array, length} = this.data
             for (let i = indexDropping; i < length; ++i) {
                 const f = array[i]
                 if (f(status.value)) {
@@ -35,8 +35,8 @@ const methods = {
     },
     takeWhile () {
         let isTaking = true
-        return (obj, status) => {
-            return isTaking && obj.data.every(matches(status.value))
+        return function (status) {
+            return isTaking && this.data.every(matches(status.value))
                 ? status
                 : (isTaking = false, {done: true})
         }
@@ -45,10 +45,10 @@ const methods = {
 
 function slice () {
     let index = 0
-    return (obj, status) => {
-        const start = obj.data.start
+    return function (status) {
+        const start = this.data.start
         let result
-        if (index >= start + obj.data.length) {
+        if (index >= start + this.data.length) {
             result = {done: true}
         } else if (index >= start) {
             result = status
@@ -60,7 +60,7 @@ function slice () {
 
 function TransformArrayLikeIterable (iterable) {
     this.iterable = iterable
-    this.cs = []
+    this.cs = new InmutableArray([])
     this.lastIndex = -1
 }
 
@@ -131,27 +131,33 @@ function initSlice (start, end) {
 
 function methodGenerator (methodName, initialize, transform) {
     return function (...args) {
-        let lastIndex = this.lastIndex
-        const cs = this.cs.map(({type, data}) => ({
-            type,
-            data
-        }))
-        const last = cs[lastIndex] || {}
-        if (last.type === methodName) {
-            last.data = transform(last.data, ...args)
+        let type = this.type
+        let data = this.data
+        let cs = this.cs
+        if (type === methodName) {
+            data = transform(data, ...args)
         } else {
-            ++lastIndex
-            cs.push({
-                type: methodName,
-                data: initialize.call(this, ...args)
-            })
+            type = methodName
+            data = initialize.call(this, ...args)
+            if (this.type) {
+                cs = cs.push({
+                    type: this.type,
+                    data: this.data
+                })
+            }
         }
         const obj = Object.create(this.constructor.prototype)
-        obj.lastIndex = lastIndex
+        obj.type = type
+        obj.data = data
         obj.cs = cs
         obj.iterable = this.iterable
         return obj
     }
+}
+
+function getFirst (obj) {
+    const length = obj.cs.length
+    return length === 0 ? obj : obj.cs.array[length - 1]
 }
 
 Object.defineProperties(TransformArrayLikeIterable.prototype, {
@@ -183,20 +189,32 @@ Object.defineProperties(TransformArrayLikeIterable.prototype, {
             let startStep = 0
             let startValue = 0
             let end = iterable.length
-            const firstChunk = cs.length && cs[0]
-            const isSliceType = firstChunk && firstChunk.type === 'slice'
-            if (isSliceType) {
+            const first = getFirst(this)
+            if (first.type === 'slice') {
                 startStep = 1
-                startValue = firstChunk.data.start
-                end = startValue + firstChunk.data.length
+                startValue = first.data.start
+                end = startValue + first.data.length
             }
-            const callbacks = cs.map(c => methods[c.type]())
+            const list = cs.array.map(c => {
+                return {
+                    type: c.type,
+                    data: c.data,
+                    fn: methods[c.type]()
+                }
+            })
+            if (this.type) {
+                list.push({
+                    type: this.type,
+                    data: this.data,
+                    fn: methods[this.type]()
+                })
+            }
             for (let i = startValue; i < end; ++i) {
                 let status = {
                     value: iterable[i]
                 }
-                for (let j = startStep; j < callbacks.length; ++j) {
-                    status = callbacks[j](cs[j], status)
+                for (let j = startStep; j < list.length; ++j) {
+                    status = list[j].fn(status)
                     if (!status) {
                         break
                     } else if (status.done) {
