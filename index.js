@@ -63,40 +63,42 @@ function TransformArrayLikeIterable (iterable) {
     this.cs = new InmutableArray([])
 }
 
-function addTransform (data, fn) {
-    return data.push(fn)
+function addTransform (fn) {
+    return createIterable.call(this, this.type, this.data.push(fn), this.cs)
 }
 
-function dropTransform (data, n) {
+function dropTransform (n) {
     if (n <= 0) {
-        return data
+        return this
     }
-    return {
+    const data = this.data
+    return createIterable.call(this, this.type, {
         start: data.start + n,
         length: data.length - n
-    }
+    }, this.cs)
 }
 
-function takeTransform (data, n) {
+function takeTransform (n) {
+    const data = this.data
     if (n >= data.length) {
-        return data
+        return this
     }
-    return {
+    return createIterable.call(this, this.type, {
         start: data.start,
         length: n
-    }
+    }, this.cs)
 }
 
-function sliceTransform (data, start, end) {
+function sliceTransform (start, end) {
     if (start <= 0) {
-        return takeTransform(data, end)
-    } else if (end >= data.length) {
-        return dropTransform(data, start)
+        return takeTransform.call(this, end)
+    } else if (end >= this.data.length) {
+        return dropTransform.call(this, start)
     }
-    return {
-        start: data.start + start,
+    return createIterable.call(this, this.type, {
+        start: this.data.start + start,
         length: end - start
-    }
+    }, this.cs)
 }
 
 function initCallbackList (fn) {
@@ -131,27 +133,29 @@ function initSlice (start, end) {
 function methodGenerator (methodName, initialize, transform) {
     return function (...args) {
         let type = this.type
-        let data = this.data
         let cs = this.cs
         if (type === methodName) {
-            data = transform(data, ...args)
-        } else {
-            type = methodName
-            data = initialize.call(this, ...args)
-            if (this.type) {
-                cs = cs.push({
-                    type: this.type,
-                    data: this.data
-                })
-            }
+            return transform.call(this, ...args)
         }
-        const obj = Object.create(this.constructor.prototype)
-        obj.type = type
-        obj.data = data
-        obj.cs = cs
-        obj.iterable = this.iterable
-        return obj
+        const data = initialize.call(this, ...args)
+        type = methodName
+        if (this.type) {
+            cs = cs.push({
+                type: this.type,
+                data: this.data
+            })
+        }
+        return createIterable.call(this, type, data, cs)
     }
+}
+
+function createIterable (type, data, cs) {
+    const obj = Object.create(this.constructor.prototype)
+    obj.type = type
+    obj.data = data
+    obj.cs = cs
+    obj.iterable = this.iterable
+    return obj
 }
 
 function getFirst (obj) {
@@ -196,14 +200,12 @@ Object.defineProperties(TransformArrayLikeIterable.prototype, {
             }
             const list = cs.array.map(c => {
                 return {
-                    type: c.type,
                     data: c.data,
                     fn: methods[c.type]()
                 }
             })
             if (this.type) {
                 list.push({
-                    type: this.type,
                     data: this.data,
                     fn: methods[this.type]()
                 })
