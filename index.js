@@ -8,36 +8,36 @@ const methods = {
     take: slice,
     slice,
     map () {
-        return function (status) {
+        return function (value) {
             return {
-                value: this.data.reduce(apply, status.value)
+                value: this.data.reduce(apply, value)
             }
         }
     },
     filter () {
-        return function (status) {
-            return this.data.every(matches(status.value)) ? status : undefined
+        return function (value) {
+            return this.data.every(matches(value)) ? {value} : undefined
         }
     },
     dropWhile () {
         let indexDropping = 0
-        return function (status) {
+        return function (value) {
             const {array, length} = this.data
             for (let i = indexDropping; i < length; ++i) {
                 const f = array[i]
-                if (f(status.value)) {
+                if (f(value)) {
                     return
                 }
                 ++indexDropping
             }
-            return status
+            return {value}
         }
     },
     takeWhile () {
         let isTaking = true
-        return function (status) {
-            return isTaking && this.data.every(matches(status.value))
-                ? status
+        return function (value) {
+            return isTaking && this.data.every(matches(value))
+                ? {value}
                 : (isTaking = false, {done: true})
         }
     }
@@ -45,13 +45,13 @@ const methods = {
 
 function slice () {
     let index = 0
-    return function (status) {
+    return function (value) {
         const start = this.data.start
         let result
         if (index >= start + this.data.length) {
             result = {done: true}
         } else if (index >= start) {
-            result = status
+            result = {value}
         }
         ++index
         return result
@@ -215,7 +215,7 @@ Object.defineProperties(TransformArrayLikeIterable.prototype, {
                     value: iterable[i]
                 }
                 for (let j = startStep; j < list.length; ++j) {
-                    status = list[j].fn(status)
+                    status = list[j].fn(status.value)
                     if (!status) {
                         break
                     } else if (status.done) {
