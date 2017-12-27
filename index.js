@@ -2,6 +2,8 @@ const InmutableArray = require('array-inmutable')
 
 const apply = (a, f) => f(a)
 const matches = a => p => p(a)
+const noValue = {}
+const endValue = {}
 
 const methods = {
     drop: slice,
@@ -9,14 +11,12 @@ const methods = {
     slice,
     map () {
         return function (value) {
-            return {
-                value: this.data.reduce(apply, value)
-            }
+            return this.data.reduce(apply, value)
         }
     },
     filter () {
         return function (value) {
-            return this.data.every(matches(value)) ? {value} : undefined
+            return this.data.every(matches(value)) ? value : noValue
         }
     },
     dropWhile () {
@@ -26,19 +26,19 @@ const methods = {
             for (let i = indexDropping; i < length; ++i) {
                 const f = array[i]
                 if (f(value)) {
-                    return
+                    return noValue
                 }
                 ++indexDropping
             }
-            return {value}
+            return value
         }
     },
     takeWhile () {
         let isTaking = true
         return function (value) {
             return isTaking && this.data.every(matches(value))
-                ? {value}
-                : (isTaking = false, {done: true})
+                ? value
+                : (isTaking = false, endValue)
         }
     }
 }
@@ -47,11 +47,11 @@ function slice () {
     let index = 0
     return function (value) {
         const start = this.data.start
-        let result
+        let result = noValue
         if (index >= start + this.data.length) {
-            result = {done: true}
+            result = endValue
         } else if (index >= start) {
-            result = {value}
+            result = value
         }
         ++index
         return result
@@ -211,19 +211,17 @@ Object.defineProperties(TransformArrayLikeIterable.prototype, {
                 })
             }
             for (let i = startValue; i < end; ++i) {
-                let status = {
-                    value: iterable[i]
-                }
+                let value = iterable[i]
                 for (let j = startStep; j < list.length; ++j) {
-                    status = list[j].fn(status.value)
-                    if (!status) {
+                    value = list[j].fn(value)
+                    if (value === noValue) {
                         break
-                    } else if (status.done) {
+                    } else if (value === endValue) {
                         return
                     }
                 }
-                if (status) {
-                    yield status.value
+                if (value !== noValue) {
+                    yield value
                 }
             }
         }
