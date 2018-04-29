@@ -4,12 +4,13 @@
   "description": "iterable that provides transformation methods for array iterables",
   "main": "index.js",
   "scripts": {
-    "test": "npm run lint && npm run test-only",
+    "test": "npm run lint && npm run test-only && npm run check",
     "test-only": "tape test/",
-    "test-ci": "npm run lint && npm run coveralls",
+    "test-ci": "npm run lint && npm run check && npm run coveralls",
     "coveralls": "npm run cov && cat ./coverage/lcov.info | coveralls && rm -rf ./coverage",
     "cov": "nyc --reporter=lcov --require babel-register npm run test-only && nyc report",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "check": "npm-check -i pre-commit"
   },
   "repository": {
     "type": "git",
@@ -27,13 +28,14 @@
   },
   "homepage": "https://github.com/xgbuils/transform-arraylike-iterable#readme",
   "devDependencies": {
-    "babel-register": "^6.24.1",
-    "coveralls": "^2.13.1",
-    "eslint": "^4.3.0",
-    "nyc": "^11.1.0",
+    "babel-register": "^6.26.0",
+    "coveralls": "^3.0.0",
+    "eslint": "^4.19.1",
+    "npm-check": "^5.7.0",
+    "nyc": "^11.7.1",
     "pre-commit": "^1.2.2",
     "tap-spec": "^4.1.1",
-    "tape": "^4.8.0"
+    "tape": "^4.9.0"
   },
   "dependencies": {
     "array-inmutable": "^0.1.2"
