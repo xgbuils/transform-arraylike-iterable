@@ -29,10 +29,10 @@
   "homepage": "https://github.com/xgbuils/transform-arraylike-iterable#readme",
   "devDependencies": {
     "babel-register": "^6.26.0",
-    "coveralls": "^3.0.0",
+    "coveralls": "^3.0.1",
     "eslint": "^4.19.1",
-    "npm-check": "^5.7.0",
-    "nyc": "^11.7.1",
+    "npm-check": "^5.7.1",
+    "nyc": "^11.8.0",
     "pre-commit": "^1.2.2",
     "tap-spec": "^4.1.1",
     "tape": "^4.9.0"
