@@ -1,6 +1,6 @@
 {
   "name": "transform-arraylike-iterable",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "iterable that provides transformation methods for array iterables",
   "main": "index.js",
   "scripts": {
